@@ -34,7 +34,7 @@ class TopStoriesViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(TopStoriesState())
     val state: StateFlow<TopStoriesState> = _state.asStateFlow()
-    private var _currentPage: Int = 0
+    private var _currentPage: Int = 1
 
     init {
         fetchData()
@@ -42,40 +42,17 @@ class TopStoriesViewModel : ViewModel() {
 
     fun fetchData() {
         viewModelScope.launch {
-
-            val canFetch = canLoadMore() &&
-                    !(_state.value.status == TopStoriesStateStatus.LOADING
-                            || _state.value.status == TopStoriesStateStatus.LOADING_MORE)
-
-            if (!canFetch) {
-                return@launch
-            }
-
-            val isLoadingMore = _currentPage > 0
-
-            _state.value =
-                _state.value.copy(
-                    status =
-                    if (isLoadingMore)
-                        TopStoriesStateStatus.LOADING_MORE
-                    else
-                        TopStoriesStateStatus.LOADING,
-                )
-
+            _state.value = TopStoriesState(status = TopStoriesStateStatus.LOADING)
             try {
-
-                // fetch top stories only once
-                if (!isLoadingMore) {
-                    val stories = ApiClient.fetchTopStories()
-                    _topStoriesID.value = stories
-                    if (_topStoriesID.value.isEmpty()) {
-                        _state.value = _state.value.copy(status = TopStoriesStateStatus.FAILURE)
-                        return@launch
-                    }
+                val stories = ApiClient.fetchTopStories()
+                _topStoriesID.value = stories
+                if (_topStoriesID.value.isEmpty()) {
+                    _state.value = TopStoriesState(status = TopStoriesStateStatus.FAILURE)
+                    return@launch
                 }
 
                 val requestList = mutableListOf<Deferred<Item>>()
-                for (i in PAGE_SIZE * _currentPage..PAGE_SIZE * (_currentPage + 1)) {
+                for (i in 0..PAGE_SIZE) {
                     requestList.add(async(context = Dispatchers.IO) {
                         ApiClient.fetchItem(_topStoriesID.value[i])
                     })
@@ -83,33 +60,53 @@ class TopStoriesViewModel : ViewModel() {
 
                 val items = awaitAll<Item>(*requestList.toTypedArray())
 
-                _state.value =
-                    _state.value.copy(
-                        items = listOf(
-                            *_state.value.items.toTypedArray(),
-                            *items.toTypedArray(),
-                        ),
-                        status = TopStoriesStateStatus.SUCCESS,
-                    )
-
-                _currentPage++
+                _state.value = TopStoriesState(
+                    items = items,
+                    status = TopStoriesStateStatus.SUCCESS,
+                )
 
             } catch (e: Exception) {
                 println(e.message)
-                _state.value =
-                    _state.value.copy(
-                        status = if (isLoadingMore)
-                            TopStoriesStateStatus.LOAD_MORE_FAILURE
-                        else
-                            TopStoriesStateStatus.FAILURE,
-                    )
+                _state.value = TopStoriesState(status = TopStoriesStateStatus.FAILURE)
+            }
+        }
+    }
+
+    fun fetchMore() {
+        viewModelScope.launch {
+            val canFetchMore = canLoadMore() &&
+                    !(_state.value.status == TopStoriesStateStatus.LOADING ||
+                            _state.value.status == TopStoriesStateStatus.LOADING_MORE)
+
+            if (!canFetchMore) return@launch
+
+            _state.value = _state.value.copy(status = TopStoriesStateStatus.LOADING_MORE)
+
+            try {
+                val requestList = mutableListOf<Deferred<Item>>()
+                for (i in (PAGE_SIZE * _currentPage) + 1..PAGE_SIZE * (_currentPage + 1)) {
+                    requestList.add(async(context = Dispatchers.IO) {
+                        ApiClient.fetchItem(_topStoriesID.value[i])
+                    })
+                }
+                val items = awaitAll(*requestList.toTypedArray())
+                _state.value = _state.value.copy(
+                    items = listOf(
+                        *_state.value.items.toTypedArray(),
+                        *items.toTypedArray(),
+                    ),
+                    status = TopStoriesStateStatus.SUCCESS,
+                )
+                _currentPage++
+            } catch (e: Exception) {
+                println(e.message)
+                _state.value = _state.value.copy(status = TopStoriesStateStatus.LOAD_MORE_FAILURE)
             }
         }
     }
 
     private fun canLoadMore(): Boolean {
-        if (_currentPage == 0) return true
-        return _topStoriesID.value.size > _currentPage * PAGE_SIZE
+        return _topStoriesID.value.size >= _currentPage * PAGE_SIZE
     }
 
 

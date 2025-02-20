@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -50,7 +51,7 @@ fun TopStories(modifier: Modifier) {
             else -> ItemListing(
                 state.items,
                 onFetchMore = {
-                    topStoriesViewModel.fetchData()
+                    topStoriesViewModel.fetchMore()
                 },
                 stateStatus = state.status,
             )
@@ -91,10 +92,7 @@ fun ItemListing(
     LazyColumn(
         state = lazyListState
     ) {
-        items(
-            items,
-            key = { it.id }
-        ) { item ->
+        items(items) { item ->
             Box(
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
@@ -104,7 +102,7 @@ fun ItemListing(
 
         item {
             when (stateStatus) {
-                TopStoriesStateStatus.LOADING_MORE -> CircularProgressIndicator()
+                TopStoriesStateStatus.LOADING_MORE -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 TopStoriesStateStatus.LOAD_MORE_FAILURE -> Text(text = "Something went wrong")
                 else -> {}
             }
