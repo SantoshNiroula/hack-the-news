@@ -29,7 +29,9 @@ fun AppNavHost(
             typeMap = mapOf(typeOf<Item>() to ItemNavType)
         ) { backStackEntry ->
             val item: Item = backStackEntry.toRoute()
-            TopStoryDetailPage(item)
+            TopStoryDetailPage(item, onBackClick = {
+                navController.popBackStack()
+            })
         }
     }
 
