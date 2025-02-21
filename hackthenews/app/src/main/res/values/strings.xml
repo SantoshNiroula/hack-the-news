@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Hack The News</string>
+    <string name="top_stories">Top Stories</string>
+    <string name="something_went_wrong">Something went wrong</string>
+    <string name="no_items_to_show">No items to show</string>
 </resources>

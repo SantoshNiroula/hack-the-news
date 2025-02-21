@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.rememberNavController
+import np.com.santoshniroula.hackthenews.app_router.AppNavHost
 import np.com.santoshniroula.hackthenews.topstories.TopStories
 import np.com.santoshniroula.hackthenews.ui.theme.HackTheNewsTheme
 
@@ -17,9 +19,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             HackTheNewsTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    TopStories(modifier = Modifier.padding(innerPadding))
-                }
+                    AppNavHost(navController = rememberNavController())
             }
         }
     }

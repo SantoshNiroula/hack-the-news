@@ -13,11 +13,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,35 +29,67 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import io.ktor.http.Url
 import np.com.santoshniroula.hackthenews.topstories.models.Item
 import np.com.santoshniroula.hackthenews.R
 import np.com.santoshniroula.hackthenews.ui.theme.HackTheNewsTheme
 
 @Composable
-fun TopStories(modifier: Modifier) {
+fun TopStoriesPage(navController: NavController) {
+    TopStories(
+        onTap = {
+            navController.navigate(it)
+        },
+        onCommentClick = {
+            // TODO()
+        }
+    )
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopStories(
+    modifier: Modifier = Modifier,
+    onCommentClick: (Item) -> Unit,
+    onTap: (Item) -> Unit = {},
+) {
     val topStoriesViewModel: TopStoriesViewModel = viewModel()
     val topStories = topStoriesViewModel.state.collectAsState()
     val state = topStories.value
 
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        when (state.status) {
-            TopStoriesStateStatus.LOADING -> CircularProgressIndicator()
-            TopStoriesStateStatus.FAILURE -> Text(text = "Something went wrong")
-            else -> ItemListing(
-                state.items,
-                onFetchMore = {
-                    topStoriesViewModel.fetchMore()
-                },
-                stateStatus = state.status,
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(text = stringResource(R.string.top_stories)) }
             )
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            contentAlignment = Alignment.Center,
+        ) {
+            when (state.status) {
+                TopStoriesStateStatus.LOADING -> CircularProgressIndicator()
+                TopStoriesStateStatus.FAILURE -> Text(text = stringResource(R.string.something_went_wrong))
+                else -> ItemListing(
+                    state.items,
+                    onFetchMore = {
+                        topStoriesViewModel.fetchMore()
+                    },
+                    stateStatus = state.status,
+                    onCommentClick = onCommentClick,
+                    onTap = onTap,
+                )
+            }
         }
     }
 }
@@ -64,7 +99,9 @@ fun TopStories(modifier: Modifier) {
 fun ItemListing(
     items: List<Item>,
     onFetchMore: () -> Unit = {},
-    stateStatus: TopStoriesStateStatus = TopStoriesStateStatus.SUCCESS
+    stateStatus: TopStoriesStateStatus = TopStoriesStateStatus.SUCCESS,
+    onCommentClick: (Item) -> Unit,
+    onTap: (Item) -> Unit
 ) {
 
     val lazyListState = rememberLazyListState()
@@ -84,7 +121,7 @@ fun ItemListing(
 
 
     if (items.isEmpty()) {
-        Text(text = "No items to show")
+        Text(text = stringResource(R.string.no_items_to_show))
         return
     }
 
@@ -96,14 +133,18 @@ fun ItemListing(
             Box(
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
-                ItemCard(item)
+                ItemCard(
+                    item,
+                    onClick = { onTap(item) },
+                    onCommentClick = { onCommentClick(item) }
+                )
             }
         }
 
         item {
             when (stateStatus) {
                 TopStoriesStateStatus.LOADING_MORE -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                TopStoriesStateStatus.LOAD_MORE_FAILURE -> Text(text = "Something went wrong")
+                TopStoriesStateStatus.LOAD_MORE_FAILURE -> Text(text = stringResource(R.string.something_went_wrong))
                 else -> {}
             }
         }
@@ -222,7 +263,9 @@ private fun ItemListingPreview() {
     HackTheNewsTheme {
         Surface {
             ItemListing(
-                items = items
+                items = items,
+                onCommentClick = {},
+                onTap = {},
             )
         }
     }

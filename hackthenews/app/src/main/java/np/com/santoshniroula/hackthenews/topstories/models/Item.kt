@@ -1,8 +1,11 @@
 package np.com.santoshniroula.hackthenews.topstories.models
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Parcelize
 data class Item(
     val id: Int,
     val deleted: Boolean? = null,
@@ -18,4 +21,4 @@ data class Item(
     val title: String? = null,
     val parts: List<Int>? = null,
     val descendants: Int? = null
-)
+): Parcelable
