@@ -3,12 +3,15 @@ package np.com.santoshniroula.hackthenews.topstories.detail
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -17,11 +20,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.viewmodel.compose.viewModel
 import np.com.santoshniroula.hackthenews.R
+import np.com.santoshniroula.hackthenews.topstories.detail.composables.CommentItem
 import np.com.santoshniroula.hackthenews.topstories.models.Item
 
 @Composable
@@ -33,15 +41,18 @@ fun TopStoryDetailPage(item: Item, onBackClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TopStoryDetailView(item: Item, onBackClick: () -> Unit) {
-    val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scaffoldState = rememberBottomSheetScaffoldState()
+
+    val detailViewModel: TopStoryDetailViewModel = viewModel()
+    val state = detailViewModel.state.collectAsState()
 
     LaunchedEffect(key1 = "sample") {
         scaffoldState.bottomSheetState.expand()
+        detailViewModel.fetchItemDetail(item)
     }
 
     BottomSheetScaffold(
-        scaffoldState  = scaffoldState,
+        scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -63,11 +74,23 @@ private fun TopStoryDetailView(item: Item, onBackClick: () -> Unit) {
             )
         },
         sheetContent = {
-            Box(
-                modifier = Modifier.padding(bottom = bottomPadding)
-            ) {
-                Text("Hello World")
-            }
+
+          Box(
+              modifier = Modifier.fillMaxSize(),
+              contentAlignment = Alignment.Center,
+          ) {
+              when (state.value.status) {
+                  TopStoryDetailStateStatus.IDLE -> CircularProgressIndicator()
+                  TopStoryDetailStateStatus.LOADING -> CircularProgressIndicator()
+                  TopStoryDetailStateStatus.FAILURE -> {
+                      Text(stringResource(R.string.something_went_wrong))
+                  }
+
+                  TopStoryDetailStateStatus.SUCCESS -> {
+                      CommentList(state.value.items)
+                  }
+              }
+          }
         },
     ) { innerPadding ->
         Box(
@@ -96,3 +119,17 @@ private fun TopStoryDetailView(item: Item, onBackClick: () -> Unit) {
     }
 }
 
+@Composable
+fun CommentList(comments: List<Item>, modifier: Modifier = Modifier) {
+    if (comments.isEmpty()) {
+        return Text(stringResource(R.string.no_comments))
+    }
+
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(comments) { CommentItem(it) }
+    }
+}

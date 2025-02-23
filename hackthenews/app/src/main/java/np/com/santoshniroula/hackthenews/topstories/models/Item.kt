@@ -20,5 +20,7 @@ data class Item(
     val score: Int? = null,
     val title: String? = null,
     val parts: List<Int>? = null,
-    val descendants: Int? = null
-): Parcelable
+    val descendants: Int? = null,
+    val timeText: String? = null,
+    val level: Int = 0,
+) : Parcelable

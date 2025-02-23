@@ -61,6 +61,9 @@ dependencies {
     // kotlin serialization
     implementation(libs.kotlinx.serialization.json)
 
+    // jsoup
+    implementation(libs.jsoup)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
