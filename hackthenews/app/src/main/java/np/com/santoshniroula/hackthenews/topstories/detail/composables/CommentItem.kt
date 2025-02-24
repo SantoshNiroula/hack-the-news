@@ -24,6 +24,7 @@ import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import np.com.santoshniroula.hackthenews.topstories.models.Item
 import np.com.santoshniroula.hackthenews.ui.theme.HackTheNewsTheme
 
@@ -33,7 +34,7 @@ fun CommentItem(
     modifier: Modifier = Modifier,
 ) {
 
-    val paddingValue = comment.level * 32
+    val paddingValue = comment.level * 16
 
     Row(
         modifier = modifier
@@ -45,7 +46,9 @@ fun CommentItem(
         if (comment.level != 0)
             VerticalDivider(
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxHeight().width(2.dp)
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(2.dp)
             )
         if (comment.level != 0)
             Spacer(modifier = Modifier.width(8.dp))
@@ -55,13 +58,17 @@ fun CommentItem(
             ) {
                 Text(
                     comment.by ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(comment.timeText ?: "", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    comment.timeText ?: "", style = MaterialTheme.typography.bodySmall,
+                    fontSize = 13.sp,
+                )
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 AnnotatedString.fromHtml(
                     comment.text ?: "",
@@ -72,7 +79,7 @@ fun CommentItem(
                         )
                     )
                 ),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(0.dp)
             )
         }

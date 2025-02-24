@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -47,7 +49,7 @@ fun TopStoriesPage(navController: NavController) {
             navController.navigate(it)
         },
         onCommentClick = {
-            // TODO()
+            navController.navigate(it)
         }
     )
 }
@@ -209,7 +211,11 @@ fun ItemCard(
             ) {
                 Icon(
                     painterResource(R.drawable.comment),
-                    contentDescription = "Comment",
+                    contentDescription = stringResource(R.string.comment),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    modifier = Modifier
+                        .width(16.dp)
+                        .height(16.dp)
                 )
                 Text(
                     (item.descendants ?: 0).toString(),
