@@ -16,6 +16,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -36,6 +37,16 @@ fun CommentItem(
 
     val paddingValue = comment.level * 16
 
+    val dividerColor = when (comment.level) {
+        1 -> MaterialTheme.colorScheme.primary
+        2 -> Color.Blue
+        3 -> Color.Green
+        4 -> Color.Magenta
+        5 -> Color.Red
+        else -> Color.Yellow
+
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -45,7 +56,7 @@ fun CommentItem(
     ) {
         if (comment.level != 0)
             VerticalDivider(
-                color = MaterialTheme.colorScheme.primary,
+                color = dividerColor,
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(2.dp)

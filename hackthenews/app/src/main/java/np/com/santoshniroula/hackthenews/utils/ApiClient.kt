@@ -32,4 +32,8 @@ object ApiClient {
     suspend fun fetchTopStories(): List<Int> {
         return client.get("topstories.json").body<List<Int>>()
     }
+
+    suspend fun fetchStories(type: String): List<Int> {
+        return client.get("$type.json").body<List<Int>>()
+    }
 }

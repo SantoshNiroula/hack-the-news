@@ -14,9 +14,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -27,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,10 +72,38 @@ fun TopStories(
     val topStories = topStoriesViewModel.state.collectAsState()
     val state = topStories.value
 
+
+
+
+
+    val expanded = remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(R.string.top_stories)) }
+                title = { Text(text = getTitle(state.type)) },
+                actions = {
+                    IconButton(onClick = { expanded.value = !expanded.value }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+
+                        DropdownMenu(
+                            expanded = expanded.value,
+                            onDismissRequest = { expanded.value = false }
+                        ) {
+
+                            StoryType.entries.map { type ->
+                                DropdownMenuItem(
+                                    text = { Text(getTitle(type)) },
+                                    onClick = {
+                                        expanded.value = false
+                                        topStoriesViewModel.changeStoryType(type)
+                                    }
+                                )
+                            }
+
+                        }
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -95,6 +129,19 @@ fun TopStories(
         }
     }
 }
+
+@Composable
+private fun getTitle(type: StoryType): String{
+    return when (type) {
+        StoryType.TOP_STORIES -> stringResource(R.string.top_stories)
+        StoryType.BEST_STORIES -> stringResource(R.string.best_stories)
+        StoryType.NEW_STORIES -> stringResource(R.string.new_stories)
+        StoryType.ASK_HN -> stringResource(R.string.ask_hn)
+        StoryType.SHOW_HN -> stringResource(R.string.show_hn)
+        StoryType.JOB_STORIES -> stringResource(R.string.jobs)
+    }
+}
+
 
 
 @Composable

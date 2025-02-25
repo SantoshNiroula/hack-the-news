@@ -12,20 +12,23 @@ class Parser {
         val commentTree = document.select(".comment-tree")[0]
         val comments = commentTree.select("tr.athing")
 
-        val itemsList = mutableListOf<Item>()
+        val itemsList = mutableListOf<Item?>()
 
         comments.map { content ->
             itemsList.add(parseItem(content))
         }
 
-        return itemsList
+       return itemsList.filterNotNull()
 
     }
 
-    private fun parseItem(content: Element): Item {
+    private fun parseItem(content: Element): Item? {
 
         val id = content.attr("id")
-        val commentText = content.select(".commtext")[0]
+        val comment = content.select(".commtext")
+        if (comment.isEmpty()) return null
+
+        val commentText = comment[0]
         val author = content.select("a.hnuser")[0].text()
         val time = content.select(".age")[0].text()
         val level = content.select("td.ind")[0].attr("indent")

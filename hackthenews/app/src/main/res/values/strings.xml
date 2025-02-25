@@ -6,4 +6,9 @@
     <string name="go_back">Go Back</string>
     <string name="no_comments">No Comments</string>
     <string name="comment">Comment</string>
+    <string name="best_stories">Best Stories</string>
+    <string name="new_stories">New Stories</string>
+    <string name="ask_hn">Ask HN</string>
+    <string name="show_hn">Show HN</string>
+    <string name="jobs">Jobs</string>
 </resources>

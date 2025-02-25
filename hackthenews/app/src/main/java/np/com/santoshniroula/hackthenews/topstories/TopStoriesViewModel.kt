@@ -12,7 +12,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import np.com.santoshniroula.hackthenews.topstories.models.Item
 import np.com.santoshniroula.hackthenews.utils.ApiClient
+import kotlin.math.min
 
+enum class StoryType {
+    TOP_STORIES,
+    BEST_STORIES,
+    NEW_STORIES,
+    ASK_HN,
+    SHOW_HN,
+    JOB_STORIES,
+}
 
 enum class TopStoriesStateStatus {
     IDLE,
@@ -27,6 +36,7 @@ enum class TopStoriesStateStatus {
 data class TopStoriesState(
     val items: List<Item> = emptyList(),
     val status: TopStoriesStateStatus = TopStoriesStateStatus.IDLE,
+    val type: StoryType = StoryType.TOP_STORIES,
 )
 
 class TopStoriesViewModel : ViewModel() {
@@ -40,34 +50,40 @@ class TopStoriesViewModel : ViewModel() {
         fetchData()
     }
 
-    fun fetchData() {
+    fun changeStoryType(type: StoryType) {
+        if (type == _state.value.type) return
+        _state.value = TopStoriesState(type = type)
+        _currentPage = 1
+        fetchData()
+    }
+
+    private fun fetchData() {
         viewModelScope.launch {
-            _state.value = TopStoriesState(status = TopStoriesStateStatus.LOADING)
+            _state.value = _state.value.copy(status = TopStoriesStateStatus.LOADING)
             try {
-                val stories = ApiClient.fetchTopStories()
+                val stories = ApiClient.fetchStories(getTypeString())
                 _topStoriesID.value = stories
                 if (_topStoriesID.value.isEmpty()) {
-                    _state.value = TopStoriesState(status = TopStoriesStateStatus.FAILURE)
+                    _state.value = _state.value.copy(status = TopStoriesStateStatus.FAILURE)
                     return@launch
                 }
 
                 val requestList = mutableListOf<Deferred<Item>>()
-                for (i in 0..PAGE_SIZE) {
+                for (i in 0..min(PAGE_SIZE - 1, _topStoriesID.value.size)) {
                     requestList.add(async(context = Dispatchers.IO) {
                         ApiClient.fetchItem(_topStoriesID.value[i])
                     })
                 }
 
-                val items = awaitAll<Item>(*requestList.toTypedArray())
+                val items = awaitAll(*requestList.toTypedArray())
 
-                _state.value = TopStoriesState(
+                _state.value = _state.value.copy(
                     items = items,
                     status = TopStoriesStateStatus.SUCCESS,
                 )
 
             } catch (e: Exception) {
-                println(e.message)
-                _state.value = TopStoriesState(status = TopStoriesStateStatus.FAILURE)
+                _state.value = _state.value.copy(status = TopStoriesStateStatus.FAILURE)
             }
         }
     }
@@ -84,7 +100,10 @@ class TopStoriesViewModel : ViewModel() {
 
             try {
                 val requestList = mutableListOf<Deferred<Item>>()
-                for (i in (PAGE_SIZE * _currentPage) + 1..PAGE_SIZE * (_currentPage + 1)) {
+                val startIndex = _currentPage * PAGE_SIZE
+                val endIndex = min(_topStoriesID.value.size - 1, PAGE_SIZE * (_currentPage + 1))
+
+                for (i in startIndex..endIndex) {
                     requestList.add(async(context = Dispatchers.IO) {
                         ApiClient.fetchItem(_topStoriesID.value[i])
                     })
@@ -99,7 +118,6 @@ class TopStoriesViewModel : ViewModel() {
                 )
                 _currentPage++
             } catch (e: Exception) {
-                println(e.message)
                 _state.value = _state.value.copy(status = TopStoriesStateStatus.LOAD_MORE_FAILURE)
             }
         }
@@ -112,6 +130,18 @@ class TopStoriesViewModel : ViewModel() {
 
     companion object {
         private const val PAGE_SIZE = 20
+    }
+
+    private fun getTypeString(): String {
+        return when (_state.value.type) {
+            StoryType.TOP_STORIES -> "topstories"
+            StoryType.BEST_STORIES -> "beststories"
+            StoryType.NEW_STORIES -> "newstories"
+            StoryType.ASK_HN -> "askstories"
+            StoryType.SHOW_HN -> "showstories"
+            StoryType.JOB_STORIES -> "jobstories"
+        }
+
     }
 
 }
