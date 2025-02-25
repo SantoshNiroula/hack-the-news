@@ -71,11 +71,6 @@ fun TopStories(
     val topStoriesViewModel: TopStoriesViewModel = viewModel()
     val topStories = topStoriesViewModel.state.collectAsState()
     val state = topStories.value
-
-
-
-
-
     val expanded = remember { mutableStateOf(false) }
 
     Scaffold(
@@ -131,7 +126,7 @@ fun TopStories(
 }
 
 @Composable
-private fun getTitle(type: StoryType): String{
+private fun getTitle(type: StoryType): String {
     return when (type) {
         StoryType.TOP_STORIES -> stringResource(R.string.top_stories)
         StoryType.BEST_STORIES -> stringResource(R.string.best_stories)
@@ -141,7 +136,6 @@ private fun getTitle(type: StoryType): String{
         StoryType.JOB_STORIES -> stringResource(R.string.jobs)
     }
 }
-
 
 
 @Composable
