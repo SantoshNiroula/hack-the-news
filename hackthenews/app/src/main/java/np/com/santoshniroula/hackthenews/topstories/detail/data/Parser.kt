@@ -1,4 +1,4 @@
-package np.com.santoshniroula.hackthenews.topstories.detail.service
+package np.com.santoshniroula.hackthenews.topstories.detail.data
 
 import np.com.santoshniroula.hackthenews.topstories.models.Item
 import org.jsoup.Jsoup

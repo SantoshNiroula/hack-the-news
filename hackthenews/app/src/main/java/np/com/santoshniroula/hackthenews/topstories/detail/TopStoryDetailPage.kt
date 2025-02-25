@@ -21,6 +21,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -44,11 +45,11 @@ private fun TopStoryDetailView(item: Item, onBackClick: () -> Unit) {
     val scaffoldState = rememberBottomSheetScaffoldState()
 
     val detailViewModel: TopStoryDetailViewModel = viewModel()
-    val state = detailViewModel.state.collectAsState()
+    val state by detailViewModel.state.collectAsState()
 
     LaunchedEffect(key1 = "sample") {
         scaffoldState.bottomSheetState.expand()
-        detailViewModel.fetchItemDetail(item)
+        detailViewModel.addEvent(TopStoryDetailEvent.FetchDetail(item))
     }
 
     BottomSheetScaffold(
@@ -75,22 +76,22 @@ private fun TopStoryDetailView(item: Item, onBackClick: () -> Unit) {
         },
         sheetContent = {
 
-          Box(
-              modifier = Modifier.fillMaxSize(),
-              contentAlignment = Alignment.Center,
-          ) {
-              when (state.value.status) {
-                  TopStoryDetailStateStatus.IDLE -> CircularProgressIndicator()
-                  TopStoryDetailStateStatus.LOADING -> CircularProgressIndicator()
-                  TopStoryDetailStateStatus.FAILURE -> {
-                      Text(stringResource(R.string.something_went_wrong))
-                  }
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                when (state.status) {
+                    TopStoryDetailStateStatus.IDLE -> CircularProgressIndicator()
+                    TopStoryDetailStateStatus.LOADING -> CircularProgressIndicator()
+                    TopStoryDetailStateStatus.FAILURE -> {
+                        Text(stringResource(R.string.something_went_wrong))
+                    }
 
-                  TopStoryDetailStateStatus.SUCCESS -> {
-                      CommentList(state.value.items)
-                  }
-              }
-          }
+                    TopStoryDetailStateStatus.SUCCESS -> {
+                        CommentList(state.items)
+                    }
+                }
+            }
         },
     ) { innerPadding ->
         Box(

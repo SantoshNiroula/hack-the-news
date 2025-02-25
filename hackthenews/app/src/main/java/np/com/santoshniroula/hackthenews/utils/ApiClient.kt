@@ -10,7 +10,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import np.com.santoshniroula.hackthenews.topstories.models.Item
 
-object ApiClient {
+class ApiClient {
    private val client = HttpClient(CIO) {
         install(ContentNegotiation){
             json(
@@ -27,10 +27,6 @@ object ApiClient {
 
     suspend fun fetchItem(id: Int): Item {
       return  client.get("item/$id.json").body<Item>()
-    }
-
-    suspend fun fetchTopStories(): List<Int> {
-        return client.get("topstories.json").body<List<Int>>()
     }
 
     suspend fun fetchStories(type: String): List<Int> {

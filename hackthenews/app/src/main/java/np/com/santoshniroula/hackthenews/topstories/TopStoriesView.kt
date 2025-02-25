@@ -32,8 +32,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -69,29 +71,30 @@ fun TopStories(
     onTap: (Item) -> Unit = {},
 ) {
     val topStoriesViewModel: TopStoriesViewModel = viewModel()
-    val topStories = topStoriesViewModel.state.collectAsState()
-    val state = topStories.value
-    val expanded = remember { mutableStateOf(false) }
+    val state by topStoriesViewModel.state.collectAsState()
+    var expanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = getTitle(state.type)) },
                 actions = {
-                    IconButton(onClick = { expanded.value = !expanded.value }) {
+                    IconButton(onClick = { expanded = !expanded }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More options")
 
                         DropdownMenu(
-                            expanded = expanded.value,
-                            onDismissRequest = { expanded.value = false }
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
                         ) {
 
                             StoryType.entries.map { type ->
                                 DropdownMenuItem(
                                     text = { Text(getTitle(type)) },
                                     onClick = {
-                                        expanded.value = false
-                                        topStoriesViewModel.changeStoryType(type)
+                                        expanded = false
+                                        topStoriesViewModel.addEvent(
+                                            TopStoriesEvent.ChangeStoryType(type)
+                                        )
                                     }
                                 )
                             }
@@ -114,7 +117,7 @@ fun TopStories(
                 else -> ItemListing(
                     state.items,
                     onFetchMore = {
-                        topStoriesViewModel.fetchMore()
+                        topStoriesViewModel.addEvent(TopStoriesEvent.FetchMore)
                     },
                     stateStatus = state.status,
                     onCommentClick = onCommentClick,
@@ -149,15 +152,15 @@ fun ItemListing(
 
     val lazyListState = rememberLazyListState()
 
-    val shouldLoadMore = remember {
+    val shouldLoadMore by remember {
         derivedStateOf {
             (lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -9) >=
                     lazyListState.layoutInfo.totalItemsCount - 6
         }
     }
 
-    LaunchedEffect(key1 = shouldLoadMore.value) {
-        if (shouldLoadMore.value) {
+    LaunchedEffect(key1 = shouldLoadMore) {
+        if (shouldLoadMore) {
             onFetchMore()
         }
     }

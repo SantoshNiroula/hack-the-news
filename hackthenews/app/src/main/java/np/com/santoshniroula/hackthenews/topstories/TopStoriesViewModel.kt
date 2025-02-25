@@ -9,9 +9,11 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import np.com.santoshniroula.hackthenews.topstories.data.TopStoriesRepositoryImpl
 import np.com.santoshniroula.hackthenews.topstories.models.Item
-import np.com.santoshniroula.hackthenews.utils.ApiClient
+import np.com.santoshniroula.hackthenews.topstories.repository.TopStoriesRepository
 import kotlin.math.min
 
 enum class StoryType {
@@ -32,14 +34,20 @@ enum class TopStoriesStateStatus {
     LOAD_MORE_FAILURE,
 }
 
-
 data class TopStoriesState(
     val items: List<Item> = emptyList(),
     val status: TopStoriesStateStatus = TopStoriesStateStatus.IDLE,
     val type: StoryType = StoryType.TOP_STORIES,
 )
 
-class TopStoriesViewModel : ViewModel() {
+sealed class TopStoriesEvent {
+    data object FetchMore : TopStoriesEvent()
+    data class ChangeStoryType(val type: StoryType) : TopStoriesEvent()
+}
+
+class TopStoriesViewModel(
+    private val repository: TopStoriesRepository = TopStoriesRepositoryImpl()
+) : ViewModel() {
     private val _topStoriesID = MutableStateFlow<List<Int>>(emptyList())
 
     private val _state = MutableStateFlow(TopStoriesState())
@@ -50,7 +58,14 @@ class TopStoriesViewModel : ViewModel() {
         fetchData()
     }
 
-    fun changeStoryType(type: StoryType) {
+    fun addEvent(event: TopStoriesEvent) {
+        when (event) {
+            is TopStoriesEvent.ChangeStoryType -> changeStoryType(event.type)
+            TopStoriesEvent.FetchMore -> fetchMore()
+        }
+    }
+
+    private fun changeStoryType(type: StoryType) {
         if (type == _state.value.type) return
         _state.value = TopStoriesState(type = type)
         _currentPage = 1
@@ -59,36 +74,38 @@ class TopStoriesViewModel : ViewModel() {
 
     private fun fetchData() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(status = TopStoriesStateStatus.LOADING)
+            _state.update { it.copy(status = TopStoriesStateStatus.LOADING) }
             try {
-                val stories = ApiClient.fetchStories(getTypeString())
+                val stories = repository.fetchStories(getTypeString())
                 _topStoriesID.value = stories
                 if (_topStoriesID.value.isEmpty()) {
-                    _state.value = _state.value.copy(status = TopStoriesStateStatus.FAILURE)
+                    _state.update { it.copy(status = TopStoriesStateStatus.FAILURE) }
                     return@launch
                 }
 
                 val requestList = mutableListOf<Deferred<Item>>()
                 for (i in 0..min(PAGE_SIZE - 1, _topStoriesID.value.size)) {
                     requestList.add(async(context = Dispatchers.IO) {
-                        ApiClient.fetchItem(_topStoriesID.value[i])
+                        repository.fetchItem(_topStoriesID.value[i])
                     })
                 }
 
                 val items = awaitAll(*requestList.toTypedArray())
 
-                _state.value = _state.value.copy(
-                    items = items,
-                    status = TopStoriesStateStatus.SUCCESS,
-                )
+                _state.update {
+                    it.copy(
+                        items = items,
+                        status = TopStoriesStateStatus.SUCCESS,
+                    )
+                }
 
             } catch (e: Exception) {
-                _state.value = _state.value.copy(status = TopStoriesStateStatus.FAILURE)
+                _state.update { it.copy(status = TopStoriesStateStatus.FAILURE) }
             }
         }
     }
 
-    fun fetchMore() {
+    private fun fetchMore() {
         viewModelScope.launch {
             val canFetchMore = canLoadMore() &&
                     !(_state.value.status == TopStoriesStateStatus.LOADING ||
@@ -96,7 +113,7 @@ class TopStoriesViewModel : ViewModel() {
 
             if (!canFetchMore) return@launch
 
-            _state.value = _state.value.copy(status = TopStoriesStateStatus.LOADING_MORE)
+            _state.update { it.copy(status = TopStoriesStateStatus.LOADING_MORE) }
 
             try {
                 val requestList = mutableListOf<Deferred<Item>>()
@@ -105,20 +122,22 @@ class TopStoriesViewModel : ViewModel() {
 
                 for (i in startIndex..endIndex) {
                     requestList.add(async(context = Dispatchers.IO) {
-                        ApiClient.fetchItem(_topStoriesID.value[i])
+                        repository.fetchItem(_topStoriesID.value[i])
                     })
                 }
                 val items = awaitAll(*requestList.toTypedArray())
-                _state.value = _state.value.copy(
-                    items = listOf(
-                        *_state.value.items.toTypedArray(),
-                        *items.toTypedArray(),
-                    ),
-                    status = TopStoriesStateStatus.SUCCESS,
-                )
+                _state.update {
+                    it.copy(
+                        items = listOf(
+                            *_state.value.items.toTypedArray(),
+                            *items.toTypedArray(),
+                        ),
+                        status = TopStoriesStateStatus.SUCCESS,
+                    )
+                }
                 _currentPage++
             } catch (e: Exception) {
-                _state.value = _state.value.copy(status = TopStoriesStateStatus.LOAD_MORE_FAILURE)
+                _state.update { it.copy(status = TopStoriesStateStatus.LOAD_MORE_FAILURE) }
             }
         }
     }
@@ -143,5 +162,4 @@ class TopStoriesViewModel : ViewModel() {
         }
 
     }
-
 }
