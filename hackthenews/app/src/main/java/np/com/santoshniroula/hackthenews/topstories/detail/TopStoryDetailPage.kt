@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -31,6 +30,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import np.com.santoshniroula.hackthenews.R
 import np.com.santoshniroula.hackthenews.topstories.detail.composables.CommentItem
+import np.com.santoshniroula.hackthenews.topstories.detail.composables.DetailHeader
 import np.com.santoshniroula.hackthenews.topstories.models.Item
 
 @Composable
@@ -78,19 +78,36 @@ private fun TopStoryDetailView(item: Item, onBackClick: () -> Unit) {
 
             Box(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
             ) {
-                when (state.status) {
-                    TopStoryDetailStateStatus.IDLE -> CircularProgressIndicator()
-                    TopStoryDetailStateStatus.LOADING -> CircularProgressIndicator()
-                    TopStoryDetailStateStatus.FAILURE -> {
-                        Text(stringResource(R.string.something_went_wrong))
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        DetailHeader(item)
                     }
+                    when (state.status) {
+                        TopStoryDetailStateStatus.IDLE,
+                        TopStoryDetailStateStatus.LOADING -> item { CircularProgressIndicator() }
 
-                    TopStoryDetailStateStatus.SUCCESS -> {
-                        CommentList(state.items)
+                        TopStoryDetailStateStatus.FAILURE -> {
+                            item {
+                                Text(stringResource(R.string.something_went_wrong))
+                            }
+                        }
+
+                        TopStoryDetailStateStatus.SUCCESS -> {
+                            if (state.items.isEmpty()) {
+                                item {
+                                    Text(stringResource(R.string.no_comments))
+                                }
+                            } else {
+                                items(state.items) { CommentItem(it) }
+                            }
+                        }
                     }
                 }
+
             }
         },
     ) { innerPadding ->
@@ -117,20 +134,5 @@ private fun TopStoryDetailView(item: Item, onBackClick: () -> Unit) {
                 }
             )
         }
-    }
-}
-
-@Composable
-fun CommentList(comments: List<Item>, modifier: Modifier = Modifier) {
-    if (comments.isEmpty()) {
-        return Text(stringResource(R.string.no_comments))
-    }
-
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(comments) { CommentItem(it) }
     }
 }
